@@ -1,0 +1,60 @@
+## System files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+## Editors / IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+## Logs
+*.log
+logs/
+
+## Environment files
+.env
+.env.*
+!.env.example
+
+## Dependencies
+node_modules/
+bower_components/
+
+## Build outputs
+dist/
+build/
+coverage/
+out/
+tmp/
+temp/
+bin/
+obj/
+
+## Caches
+.cache/
+.parcel-cache/
+.next/
+.nuxt/
+.svelte-kit/
+
+## Package manager artifacts
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+## Python artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.venv/
+venv/
+
+## Misc
+.DS_Store?
+*.tmp

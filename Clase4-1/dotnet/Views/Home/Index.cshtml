@@ -1,0 +1,104 @@
+﻿@{
+    ViewData["Title"] = "Superman Multiverse Blog";
+}
+
+<section class="hero-shell">
+    <div class="hero-copy">
+        <p class="eyebrow">Daily Planet // Metropolis Global Feed</p>
+        <h1>Superman Multiverse Blog</h1>
+        <p class="hero-lead">
+            Noticias de Metropolis, reportes de crisis y versiones alternativas de Clark Kent en un mismo panel interactivo.
+        </p>
+        <div class="hero-badges">
+            <span>Clark Kent</span>
+            <span>Metropolis</span>
+            <span>Justice League</span>
+        </div>
+    </div>
+
+    <div class="hero-panel">
+        <p class="panel-label">Universo activo</p>
+        <h2 id="universeTitle">Prime Earth</h2>
+        <p id="universeSummary" class="panel-summary"></p>
+        <div class="panel-meter">
+            <div>
+                <span>Hope Index</span>
+                <strong id="hopeValue">98%</strong>
+            </div>
+            <div>
+                <span>Threat Level</span>
+                <strong id="threatValue">Moderate</strong>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section-card">
+    <div class="section-head">
+        <div>
+            <p class="eyebrow">Selector de universos</p>
+            <h2>Variantes de Superman</h2>
+        </div>
+        <p id="universeMeta" class="section-meta"></p>
+    </div>
+    <div id="universeButtons" class="chip-row"></div>
+</section>
+
+<section class="content-grid">
+    <article class="section-card feature-card">
+        <div class="section-head compact">
+            <div>
+                <p class="eyebrow">Portada del dia</p>
+                <h2 id="featuredTitle"></h2>
+            </div>
+            <span id="featuredTag" class="pill-tag"></span>
+        </div>
+        <p id="featuredExcerpt" class="feature-excerpt"></p>
+        <div class="feature-footer">
+            <span id="featuredAuthor"></span>
+            <span id="featuredTime"></span>
+        </div>
+    </article>
+
+    <aside class="section-card">
+        <div class="section-head compact">
+            <div>
+                <p class="eyebrow">Transmision en vivo</p>
+                <h2>Red de alerta</h2>
+            </div>
+        </div>
+        <ul id="tickerList" class="ticker-list"></ul>
+    </aside>
+</section>
+
+<section class="section-card">
+    <div class="section-head compact">
+        <div>
+            <p class="eyebrow">Historias recientes</p>
+            <h2>Lecturas destacadas</h2>
+        </div>
+        <div id="tagFilters" class="chip-row"></div>
+    </div>
+
+    <div class="search-row">
+        <input id="searchInput" type="search" placeholder="Buscar: Lex, Krypton, multiverso, Daily Planet..." />
+    </div>
+
+    <div id="postGrid" class="post-grid"></div>
+</section>
+
+<template id="postTemplate">
+    <article class="story-card">
+        <span class="story-tag"></span>
+        <h3 class="story-title"></h3>
+        <p class="story-excerpt"></p>
+        <div class="story-meta">
+            <span class="story-author"></span>
+            <span class="story-read"></span>
+        </div>
+    </article>
+</template>
+
+@section Scripts {
+    <script src="~/js/superman-blog.js" asp-append-version="true"></script>
+}
