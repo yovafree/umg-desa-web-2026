@@ -34,9 +34,16 @@ La organización del material se hace por clase. Cada carpeta de clase debe tene
 │       ├── Controllers/
 │       ├── Views/
 │       └── wwwroot/
-└── Clase7/
-    └── mvcEjemplo/
-        ├── mvcEjemplo.csproj
+├── Clase7/
+│   └── mvcEjemplo/
+│       ├── mvcEjemplo.csproj
+│       ├── Controllers/
+│       ├── Models/
+│       ├── Views/
+│       └── wwwroot/
+└── Clase8/
+    └── mvcEjemplo1/
+        ├── mvcEjemplo1.csproj
         ├── Controllers/
         ├── Models/
         ├── Views/
@@ -91,6 +98,20 @@ Si necesitas ejecutar esta clase localmente:
 
 ```bash
 dotnet run --project Clase7/mvcEjemplo/mvcEjemplo.csproj
+```
+
+### Clase 8
+
+Contiene el proyecto [Clase8/mvcEjemplo1](Clase8/mvcEjemplo1), un ejemplo ASP.NET MVC conectado a base de datos con Entity Framework Core (MySQL):
+
+- `CursoDbContext` como contexto de EF Core, con el `DbSet<Categoria>`.
+- Modelo `Categoria` (Id, Nombre, Descripcion, Estado).
+- `CategoriasController` con la acción `Index` para listar categorías desde la base de datos.
+
+Si necesitas ejecutar esta clase localmente:
+
+```bash
+dotnet run --project Clase8/mvcEjemplo1/mvcEjemplo1.csproj
 ```
 
 ## Notas
