@@ -1,0 +1,18 @@
+extends ../layout.pug
+
+block content
+  ul.bg-white.shadow.rounded.p-6.space-y-2
+    li
+      strong.text-gray-900 ID:
+      |  #{cliente.id}
+    li
+      strong.text-gray-900 Nombre:
+      |  #{cliente.nombre}
+    li
+      strong.text-gray-900 Email:
+      |  #{cliente.email}
+    li
+      strong.text-gray-900 Teléfono:
+      |  #{cliente.telefono}
+
+  a.inline-block.mt-4(href="/clientes" class="text-blue-600 hover:underline") Volver al listado

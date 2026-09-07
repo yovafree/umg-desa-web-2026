@@ -1,0 +1,15 @@
+doctype html
+html(lang="es")
+  head
+    meta(charset="UTF-8")
+    meta(name="viewport" content="width=device-width, initial-scale=1")
+    title= titulo
+    script(src="https://cdn.tailwindcss.com")
+  body.min-h-screen.bg-gray-50.text-gray-800.font-sans
+    div.max-w-3xl.mx-auto.p-8
+      nav.mb-6.flex.gap-4.text-blue-600
+        a(href="/" class="hover:underline") Inicio
+        a(href="/productos" class="hover:underline") Productos
+        a(href="/clientes" class="hover:underline") Clientes
+      h1.text-2xl.font-bold.mb-4.text-gray-900= titulo
+      block content

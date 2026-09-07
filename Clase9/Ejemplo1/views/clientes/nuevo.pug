@@ -1,0 +1,19 @@
+extends ../layout.pug
+
+block content
+  form.max-w-md.bg-white.shadow.rounded.p-6.space-y-4(action="/clientes" method="POST")
+    div
+      label.block.font-semibold.mb-1(for="nombre") Nombre
+      input.w-full.border.border-gray-300.rounded.px-3.py-2(type="text" id="nombre" name="nombre" required)
+
+    div
+      label.block.font-semibold.mb-1(for="email") Email
+      input.w-full.border.border-gray-300.rounded.px-3.py-2(type="email" id="email" name="email" required)
+
+    div
+      label.block.font-semibold.mb-1(for="telefono") Teléfono
+      input.w-full.border.border-gray-300.rounded.px-3.py-2(type="text" id="telefono" name="telefono" required)
+
+    button.px-4.py-2.bg-blue-600.text-white.rounded(type="submit" class="hover:bg-blue-700") Guardar
+
+  a.inline-block.mt-4(href="/clientes" class="text-blue-600 hover:underline") Cancelar

@@ -41,13 +41,21 @@ La organización del material se hace por clase. Cada carpeta de clase debe tene
 │       ├── Models/
 │       ├── Views/
 │       └── wwwroot/
-└── Clase8/
+├── Clase8/
     └── mvcEjemplo1/
         ├── mvcEjemplo1.csproj
         ├── Controllers/
         ├── Models/
         ├── Views/
         └── wwwroot/
+└── Clase9/
+    └── Ejemplo1/
+        ├── package.json
+        ├── app.js
+        ├── controllers/
+        ├── models/
+        ├── routes/
+        └── views/
 ```
 
 ## Clases y ejemplos
@@ -113,6 +121,24 @@ Si necesitas ejecutar esta clase localmente:
 ```bash
 dotnet run --project Clase8/mvcEjemplo1/mvcEjemplo1.csproj
 ```
+
+### Clase 9
+
+Contiene el proyecto [Clase9/Ejemplo1](Clase9/Ejemplo1), una aplicación Express con vistas Pug y operaciones CRUD en memoria para:
+
+- Productos.
+- Clientes.
+- Controladores, modelos, rutas y vistas organizados por recurso.
+
+Para ejecutar esta clase localmente:
+
+```bash
+cd Clase9/Ejemplo1
+npm install
+npm run dev
+```
+
+La aplicación queda disponible en [http://localhost:3000](http://localhost:3000). El listado de productos se muestra en `/productos` y el de clientes en `/clientes`.
 
 ## Notas
 

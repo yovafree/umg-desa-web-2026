@@ -1,0 +1,19 @@
+extends ../layout.pug
+
+block content
+  form.max-w-md.bg-white.shadow.rounded.p-6.space-y-4(action=`/productos/${producto.id}` method="POST")
+    div
+      label.block.font-semibold.mb-1(for="nombre") Nombre
+      input.w-full.border.border-gray-300.rounded.px-3.py-2(type="text" id="nombre" name="nombre" value=producto.nombre required)
+
+    div
+      label.block.font-semibold.mb-1(for="precio") Precio
+      input.w-full.border.border-gray-300.rounded.px-3.py-2(type="number" id="precio" name="precio" step="0.01" value=producto.precio required)
+
+    div
+      label.block.font-semibold.mb-1(for="stock") Stock
+      input.w-full.border.border-gray-300.rounded.px-3.py-2(type="number" id="stock" name="stock" value=producto.stock required)
+
+    button.px-4.py-2.bg-blue-600.text-white.rounded(type="submit" class="hover:bg-blue-700") Actualizar
+
+  a.inline-block.mt-4(href="/productos" class="text-blue-600 hover:underline") Cancelar

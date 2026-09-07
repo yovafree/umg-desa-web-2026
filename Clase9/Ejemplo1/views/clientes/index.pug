@@ -1,0 +1,25 @@
+extends ../layout.pug
+
+block content
+  a(href="/clientes/nuevo" class="inline-block mb-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700") + Nuevo cliente
+
+  table.w-full.border-collapse.bg-white.shadow.rounded.overflow-hidden
+    thead.bg-gray-100
+      tr
+        th.text-left.px-4.py-2 ID
+        th.text-left.px-4.py-2 Nombre
+        th.text-left.px-4.py-2 Email
+        th.text-left.px-4.py-2 Teléfono
+        th.text-left.px-4.py-2 Acciones
+    tbody
+      each cliente in clientes
+        tr.border-t.border-gray-200
+          td.px-4.py-2= cliente.id
+          td.px-4.py-2= cliente.nombre
+          td.px-4.py-2= cliente.email
+          td.px-4.py-2= cliente.telefono
+          td.px-4.py-2.space-x-2
+            a(href=`/clientes/${cliente.id}` class="text-blue-600 hover:underline") Ver
+            a(href=`/clientes/${cliente.id}/editar` class="text-blue-600 hover:underline") Editar
+            form(action=`/clientes/${cliente.id}/eliminar` method="POST" class="inline")
+              button(type="submit" class="text-red-600 hover:underline") Eliminar
