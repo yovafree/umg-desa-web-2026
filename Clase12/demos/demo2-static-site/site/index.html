@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Static site on Azure Blob Storage</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 0; background: #0f172a; color: #e2e8f0; }
+    main { max-width: 720px; margin: 0 auto; padding: 4rem 1.5rem; }
+    h1 { color: #38bdf8; }
+    .card { background: #1e293b; border-radius: 12px; padding: 1.25rem 1.5rem; margin-top: 1rem; }
+    code { color: #fbbf24; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Hello from Azure Blob Storage ☁️</h1>
+    <p>This page is served directly from the <code>$web</code> container. There is no web server to manage.</p>
+    <div class="card">
+      <strong>Why it matters</strong>
+      <p>HTML, CSS and JS (including a React build) only need storage + HTTPS. Cost: cents per month.</p>
+    </div>
+    <div class="card">
+      <strong>Loaded at:</strong> <span id="time"></span>
+    </div>
+  </main>
+  <script>document.getElementById('time').textContent = new Date().toLocaleString();</script>
+</body>
+</html>

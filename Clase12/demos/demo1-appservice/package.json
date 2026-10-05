@@ -1,0 +1,15 @@
+{
+  "name": "webclass-demo1-appservice",
+  "version": "1.0.0",
+  "description": "Demo 1 - Express app deployed to Azure App Service",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "express": "^4.21.0"
+  }
+}

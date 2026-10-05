@@ -1,0 +1,12 @@
+{
+  "name": "quotes-api",
+  "version": "1.0.0",
+  "description": "Demo 3 and Lab - serverless Quotes API on Azure Functions (Node.js v4 model)",
+  "main": "src/functions/*.js",
+  "scripts": {
+    "start": "func start --cors \"*\""
+  },
+  "dependencies": {
+    "@azure/functions": "^4.5.0"
+  }
+}

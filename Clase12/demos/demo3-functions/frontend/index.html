@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Quotes - Serverless</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 640px; margin: 3rem auto; padding: 0 1rem; }
+    blockquote { font-size: 1.3rem; border-left: 4px solid #0078d4; padding-left: 1rem; min-height: 3rem; }
+    input, button { padding: .5rem; margin: .25rem 0; width: 100%; box-sizing: border-box; }
+    button { background: #0078d4; color: #fff; border: 0; border-radius: 6px; cursor: pointer; }
+    #status { color: #555; font-size: .9rem; }
+  </style>
+</head>
+<body>
+  <h1>Serverless Quotes ⚡</h1>
+  <p id="api"></p>
+  <blockquote id="quote">Click the button…</blockquote>
+  <button id="get">Get random quote</button>
+
+  <h2>Add a quote</h2>
+  <input id="text" placeholder="Quote text">
+  <input id="author" placeholder="Author">
+  <button id="add">POST /api/quotes</button>
+  <p id="status"></p>
+
+  <script src="config.js"></script>
+  <script>
+    const API = `${window.API_BASE}/quotes`;
+    document.getElementById('api').textContent = `API: ${API}`;
+
+    document.getElementById('get').onclick = async () => {
+      const res = await fetch(API);
+      const q = await res.json();
+      document.getElementById('quote').textContent = `"${q.text}" — ${q.author}`;
+    };
+
+    document.getElementById('add').onclick = async () => {
+      const res = await fetch(API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: document.getElementById('text').value,
+          author: document.getElementById('author').value
+        })
+      });
+      const data = await res.json();
+      document.getElementById('status').textContent =
+        res.ok ? `201 Created — total in this instance: ${data.total}` : `${res.status}: ${data.error}`;
+    };
+  </script>
+</body>
+</html>
