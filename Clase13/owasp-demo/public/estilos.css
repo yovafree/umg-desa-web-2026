@@ -1,0 +1,8 @@
+body{font-family:system-ui,sans-serif;max-width:860px;margin:2rem auto;padding:0 1rem;line-height:1.5;color:#1f2937}
+h1{margin-bottom:.2rem} .tag{display:inline-block;padding:.15rem .6rem;border-radius:999px;font-size:.8rem;font-weight:600}
+.vuln{background:#fee2e2;color:#991b1b} .seg{background:#dcfce7;color:#166534}
+section{border:1px solid #e5e7eb;border-radius:10px;padding:1rem 1.2rem;margin:1rem 0}
+input,textarea,button{font:inherit;padding:.45rem .6rem;margin:.2rem 0;border:1px solid #cbd5e1;border-radius:6px}
+input,textarea{width:100%;box-sizing:border-box} button{background:#1e3a8a;color:#fff;border:0;cursor:pointer}
+pre{background:#0f172a;color:#e2e8f0;padding:.7rem;border-radius:6px;overflow:auto;font-size:.85rem;white-space:pre-wrap}
+.coment{border-bottom:1px dashed #e5e7eb;padding:.4rem 0} small{color:#64748b}

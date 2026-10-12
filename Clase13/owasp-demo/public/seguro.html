@@ -1,0 +1,17 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Versión SEGURA</title><link rel="stylesheet" href="estilos.css"></head><body>
+<p><a href="index.html">← Inicio</a></p>
+<h1><span class="tag seg">Versión SEGURA</span></h1>
+<section><h2>1 · Login (A05 Inyección / A07 Autenticación)</h2>
+<form id="fLogin"><input name="correo" placeholder="correo"><input name="clave" type="password" placeholder="contraseña"><button>Ingresar</button></form>
+<pre id="rLogin">—</pre></section>
+<section><h2>2 · Ver pedido por ID (A01 Control de acceso)</h2>
+<form id="fPedido"><input name="id" type="number" value="1"><button>Consultar</button></form>
+<pre id="rPedido">—</pre></section>
+<section><h2>3 · Comentarios (A05 XSS)</h2>
+<form id="fCom"><input name="autor" placeholder="tu nombre"><textarea name="texto" rows="2" placeholder="comentario"></textarea><button>Publicar</button></form>
+<div id="lista"></div></section>
+<section><h2>4 · Reporte con filtro (A10 Condiciones excepcionales)</h2>
+<form id="fRep"><input name="filtro" value='{"dias":30}'><button>Generar</button></form>
+<pre id="rRep">—</pre></section>
+<script src="seguro.js"></script></body></html>
