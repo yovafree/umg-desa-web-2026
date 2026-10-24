@@ -37,6 +37,17 @@ builder.Services.ConfigureOptions<JwtBearerSetup>();
 
 builder.Services.AddAuthorization();
 
+// CORS: el navegador bloquea llamadas desde otro origen (puerto distinto = otro origen).
+// Solo permitimos a NUESTRO frontend; nunca AllowAnyOrigin en una API con credenciales.
+// Ojo: CORS protege a los usuarios del navegador, no a la API (curl lo ignora).
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("web", policy => policy
+        .WithOrigins("http://localhost:5173")
+        .AllowAnyHeader()   // necesitamos "Authorization" y "Content-Type"
+        .AllowAnyMethod());
+});
+
 var app = builder.Build();
 
 // Para la demo usamos EnsureCreated: crea auth.db con el esquema si no existe.
@@ -54,6 +65,10 @@ if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
+
+// CORS va antes de la autenticación para que las peticiones preflight (OPTIONS)
+// reciban sus cabeceras aunque no traigan token.
+app.UseCors("web");
 
 // El orden importa: primero averiguamos QUIÉN es (autenticación)
 // y después decidimos QUÉ puede hacer (autorización).
