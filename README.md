@@ -140,6 +140,15 @@ npm run dev
 
 La aplicación queda disponible en [http://localhost:3000](http://localhost:3000). El listado de productos se muestra en `/productos` y el de clientes en `/clientes`.
 
+### Clase 15
+
+Contiene [Clase15/demo-auth](Clase15/demo-auth), una demo de autenticación en dos partes (.NET 10 Minimal APIs + React/Vite/TypeScript):
+
+- Parte A (`01-local`): registro, hash de contraseñas, JWT HS256, CORS, rate limiting y 2FA con TOTP.
+- Parte B (`02-auth0`): login con Auth0 (OIDC + PKCE), validación con JWKS y permisos RBAC.
+
+Cada paso tiene un tag (`parteA-paso01` … `parteB-paso06`). Instrucciones en [Clase15/demo-auth/README.md](Clase15/demo-auth/README.md) y guion en [Clase15/demo-auth/GUION-DEMO.md](Clase15/demo-auth/GUION-DEMO.md).
+
 ## Notas
 
 Este README raíz resume la estructura general del curso y las rutas principales de ejecución. Los detalles operativos deben vivir dentro del README.md de cada clase o subproyecto.
