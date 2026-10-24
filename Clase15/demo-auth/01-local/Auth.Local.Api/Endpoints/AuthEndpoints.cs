@@ -1,4 +1,5 @@
 using System.Net.Mail;
+using Auth.Local.Api.Auth;
 using Auth.Local.Api.Contracts;
 using Auth.Local.Api.Data;
 using Auth.Local.Api.Models;
@@ -16,6 +17,7 @@ public static class AuthEndpoints
         var group = app.MapGroup("/api/auth");
 
         group.MapPost("/register", Register);
+        group.MapPost("/login", Login);
 
         return app;
     }
@@ -51,6 +53,54 @@ public static class AuthEndpoints
         await db.SaveChangesAsync();
 
         return Results.Created($"/api/users/{user.Id}", new { user.Id, user.Email }); // 201
+    }
+
+    // POST /api/auth/login
+    private static async Task<IResult> Login(
+        LoginRequest request,
+        AppDbContext db,
+        IPasswordHasher<User> hasher,
+        TokenService tokens)
+    {
+        var email = NormalizeEmail(request.Email);
+        var user = email is null ? null : await db.Users.SingleOrDefaultAsync(u => u.Email == email);
+
+        if (user is null)
+        {
+            // Aunque el usuario no exista, calculamos un hash igual para que la respuesta
+            // tarde lo mismo: así un atacante no puede adivinar qué correos existen
+            // midiendo tiempos (enumeración de usuarios).
+            hasher.VerifyHashedPassword(DummyUser, DummyUser.PasswordHash, request.Password ?? "");
+            return InvalidCredentials();
+        }
+
+        var result = hasher.VerifyHashedPassword(user, user.PasswordHash, request.Password ?? "");
+        if (result == PasswordVerificationResult.Failed)
+            return InvalidCredentials();
+
+        // Si el algoritmo/iteraciones del hash cambiaron, lo actualizamos en este momento.
+        if (result == PasswordVerificationResult.SuccessRehashNeeded)
+        {
+            user.PasswordHash = hasher.HashPassword(user, request.Password!);
+            await db.SaveChangesAsync();
+        }
+
+        return Results.Ok(new { accessToken = tokens.CreateAccessToken(user) });
+    }
+
+    // Mensaje GENÉRICO: no decimos si falló el correo o la contraseña,
+    // para no regalarle información a quien intenta adivinar cuentas.
+    private static IResult InvalidCredentials() =>
+        Results.Json(new { message = "Correo o contraseña incorrectos." }, statusCode: StatusCodes.Status401Unauthorized);
+
+    // Usuario ficticio con un hash real, usado solo para igualar tiempos de respuesta.
+    private static readonly User DummyUser = CreateDummyUser();
+
+    private static User CreateDummyUser()
+    {
+        var user = new User { Email = "dummy@localhost", PasswordHash = "" };
+        user.PasswordHash = new PasswordHasher<User>().HashPassword(user, Guid.NewGuid().ToString());
+        return user;
     }
 
     // Comparamos correos sin importar mayúsculas ni espacios.

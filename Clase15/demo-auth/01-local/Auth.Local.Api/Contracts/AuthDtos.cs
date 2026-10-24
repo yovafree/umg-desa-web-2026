@@ -4,3 +4,5 @@ namespace Auth.Local.Api.Contracts;
 // Nunca exponemos la entidad User directamente (tiene PasswordHash y TotpSecret).
 
 public record RegisterRequest(string Email, string Password);
+
+public record LoginRequest(string Email, string Password);

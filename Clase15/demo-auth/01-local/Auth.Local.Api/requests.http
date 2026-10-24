@@ -22,3 +22,31 @@ Content-Type: application/json
   "email": "no-es-correo",
   "password": "123"
 }
+
+### Login correcto -> 200 { accessToken }
+# @name login
+POST {{api}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "ana@demo.com",
+  "password": "Secreta123"
+}
+
+### Login con contraseña incorrecta -> 401 (mensaje genérico)
+POST {{api}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "ana@demo.com",
+  "password": "incorrecta"
+}
+
+### Login con usuario inexistente -> 401 (¡el MISMO mensaje!)
+POST {{api}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "nadie@demo.com",
+  "password": "Secreta123"
+}
