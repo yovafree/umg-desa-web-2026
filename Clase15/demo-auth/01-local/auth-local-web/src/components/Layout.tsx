@@ -9,8 +9,20 @@ export default function Layout() {
       <header className="navbar">
         <strong>🔐 Demo Auth · Local</strong>
         <nav>
-          <NavLink to="/">Inicio</NavLink>
-          {isAuthenticated && <button onClick={logout}>Cerrar sesión</button>}
+          <NavLink to="/" end>
+            Inicio
+          </NavLink>
+          {isAuthenticated ? (
+            <>
+              <NavLink to="/perfil">Perfil</NavLink>
+              <button onClick={logout}>Cerrar sesión</button>
+            </>
+          ) : (
+            <>
+              <NavLink to="/registro">Registro</NavLink>
+              <NavLink to="/login">Iniciar sesión</NavLink>
+            </>
+          )}
         </nav>
       </header>
       <main className="container">
