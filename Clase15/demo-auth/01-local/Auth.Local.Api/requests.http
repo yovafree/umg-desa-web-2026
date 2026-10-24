@@ -4,3 +4,21 @@
 
 ### Salud de la API (anónimo) -> 200
 GET {{api}}/api/health
+
+### Registro de usuario -> 201 (la segunda vez -> 409)
+POST {{api}}/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "ana@demo.com",
+  "password": "Secreta123"
+}
+
+### Registro inválido (correo mal formado, contraseña corta) -> 400
+POST {{api}}/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "no-es-correo",
+  "password": "123"
+}
