@@ -1,0 +1,6 @@
+# Peticiones de prueba de Auth.Local.Api
+# Ábrelo en VS Code (extensión REST Client) o en Visual Studio / Rider.
+@api = http://localhost:5080
+
+### Salud de la API (anónimo) -> 200
+GET {{api}}/api/health
