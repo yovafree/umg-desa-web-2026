@@ -17,7 +17,9 @@ public static class AuthEndpoints
         var group = app.MapGroup("/api/auth");
 
         group.MapPost("/register", Register);
-        group.MapPost("/login", Login);
+        // Solo el login tiene límite de intentos (ver AddRateLimiter en Program.cs).
+        group.MapPost("/login", Login)
+            .RequireRateLimiting(RateLimitPolicies.Login);
 
         return app;
     }

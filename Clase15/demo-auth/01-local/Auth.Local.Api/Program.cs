@@ -1,3 +1,4 @@
+using System.Threading.RateLimiting;
 using Auth.Local.Api.Auth;
 using Auth.Local.Api.Data;
 using Auth.Local.Api.Endpoints;
@@ -48,6 +49,35 @@ builder.Services.AddCors(options =>
         .AllowAnyMethod());
 });
 
+// Rate limiting nativo: frena ataques de fuerza bruta contra el login.
+// Ventana fija: máximo 5 intentos por minuto POR IP; el 6.º recibe 429.
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    options.AddPolicy(RateLimitPolicies.Login, httpContext =>
+        // Cada IP tiene su propio contador (partición).
+        // Detrás de un proxy/load balancer habría que usar ForwardedHeaders para ver la IP real.
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "desconocida",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 5,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0, // no encolamos: rechazamos de inmediato
+            }));
+
+    options.OnRejected = async (context, cancellationToken) =>
+    {
+        if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
+            context.HttpContext.Response.Headers.RetryAfter = ((int)retryAfter.TotalSeconds).ToString();
+
+        await context.HttpContext.Response.WriteAsJsonAsync(
+            new { message = "Demasiados intentos. Espera un minuto e inténtalo de nuevo." },
+            cancellationToken);
+    };
+});
+
 var app = builder.Build();
 
 // Para la demo usamos EnsureCreated: crea auth.db con el esquema si no existe.
@@ -74,6 +104,7 @@ app.UseCors("web");
 // y después decidimos QUÉ puede hacer (autorización).
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
 
 // ---------------------------------------------------------------
 // Endpoints
