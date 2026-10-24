@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using System.Text;
 using Auth.Local.Api.Models;
 using Microsoft.Extensions.Options;
@@ -14,9 +13,43 @@ namespace Auth.Local.Api.Auth;
 public class TokenService(IOptions<JwtOptions> options)
 {
     private readonly JwtOptions _jwt = options.Value;
+    private readonly JsonWebTokenHandler _handler = new();
 
     public string CreateAccessToken(User user) =>
         CreateToken(user, TimeSpan.FromMinutes(_jwt.AccessTokenMinutes));
+
+    // Token temporal entre "contraseña correcta" y "código 2FA correcto".
+    // El claim purpose = "2fa" hace que la política por defecto lo rechace (403)
+    // en cualquier endpoint normal: solo sirve para /api/auth/2fa/verify.
+    public string CreateTwoFactorToken(User user) =>
+        CreateToken(
+            user,
+            TimeSpan.FromMinutes(_jwt.TwoFactorTokenMinutes),
+            new Dictionary<string, object> { [AuthClaims.Purpose] = AuthClaims.TwoFactorPurpose });
+
+    /// <summary>
+    /// Valida un tempToken del 2FA (firma, issuer, audience, expiración y purpose).
+    /// Devuelve el id del usuario ("sub") o null si el token no es válido.
+    /// </summary>
+    public async Task<int?> ValidateTwoFactorTokenAsync(string? token)
+    {
+        if (string.IsNullOrWhiteSpace(token))
+            return null;
+
+        var result = await _handler.ValidateTokenAsync(token, JwtBearerSetup.CreateValidationParameters(_jwt));
+        if (!result.IsValid)
+            return null;
+
+        // Un access token normal NO puede usarse aquí: exigimos purpose = "2fa".
+        if (!result.Claims.TryGetValue(AuthClaims.Purpose, out var purpose) ||
+            purpose?.ToString() != AuthClaims.TwoFactorPurpose)
+            return null;
+
+        return result.Claims.TryGetValue(JwtRegisteredClaimNames.Sub, out var sub) &&
+               int.TryParse(sub?.ToString(), out var userId)
+            ? userId
+            : null;
+    }
 
     private string CreateToken(User user, TimeSpan lifetime, IDictionary<string, object>? extraClaims = null)
     {
@@ -52,6 +85,6 @@ public class TokenService(IOptions<JwtOptions> options)
 
         // El resultado es header.payload.firma en Base64Url.
         // OJO: el payload NO está cifrado, cualquiera puede leerlo. Solo está firmado.
-        return new JsonWebTokenHandler().CreateToken(descriptor);
+        return _handler.CreateToken(descriptor);
     }
 }

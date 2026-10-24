@@ -87,6 +87,11 @@ public static class AuthEndpoints
             await db.SaveChangesAsync();
         }
 
+        // Con 2FA activo, la contraseña sola NO basta: devolvemos un token temporal
+        // que solo sirve para el segundo paso (/api/auth/2fa/verify).
+        if (user.TwoFactorEnabled)
+            return Results.Ok(new { requires2fa = true, tempToken = tokens.CreateTwoFactorToken(user) });
+
         return Results.Ok(new { accessToken = tokens.CreateAccessToken(user) });
     }
 

@@ -4,4 +4,5 @@ namespace Auth.Local.Api.Auth;
 public static class RateLimitPolicies
 {
     public const string Login = "login";
+    public const string TwoFactor = "2fa";
 }

@@ -4,6 +4,7 @@ using Auth.Local.Api.Data;
 using Auth.Local.Api.Endpoints;
 using Auth.Local.Api.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -36,7 +37,17 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer();
 builder.Services.ConfigureOptions<JwtBearerSetup>();
 
-builder.Services.AddAuthorization();
+// Política por defecto (la que usa RequireAuthorization()): además de estar autenticado,
+// el token NO debe tener el claim "purpose". Así el tempToken del 2FA (purpose = "2fa"),
+// aunque esté bien firmado, no sirve para /api/profile ni otros endpoints normales -> 403.
+var fullSessionPolicy = new AuthorizationPolicyBuilder()
+    .RequireAuthenticatedUser()
+    .RequireAssertion(context => !context.User.HasClaim(c => c.Type == AuthClaims.Purpose))
+    .Build();
+
+builder.Services.AddAuthorizationBuilder()
+    .AddPolicy(AuthPolicies.FullSession, fullSessionPolicy)
+    .SetDefaultPolicy(fullSessionPolicy);
 
 // CORS: el navegador bloquea llamadas desde otro origen (puerto distinto = otro origen).
 // Solo permitimos a NUESTRO frontend; nunca AllowAnyOrigin en una API con credenciales.
@@ -55,17 +66,11 @@ builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 
-    options.AddPolicy(RateLimitPolicies.Login, httpContext =>
-        // Cada IP tiene su propio contador (partición).
-        // Detrás de un proxy/load balancer habría que usar ForwardedHeaders para ver la IP real.
-        RateLimitPartition.GetFixedWindowLimiter(
-            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "desconocida",
-            factory: _ => new FixedWindowRateLimiterOptions
-            {
-                PermitLimit = 5,
-                Window = TimeSpan.FromMinutes(1),
-                QueueLimit = 0, // no encolamos: rechazamos de inmediato
-            }));
+    options.AddPolicy(RateLimitPolicies.Login, FiveAttemptsPerMinutePerIp);
+
+    // El código de 6 dígitos también se puede adivinar por fuerza bruta (1 en 1 000 000),
+    // así que /2fa/verify tiene su propio límite (contador independiente del login).
+    options.AddPolicy(RateLimitPolicies.TwoFactor, FiveAttemptsPerMinutePerIp);
 
     options.OnRejected = async (context, cancellationToken) =>
     {
@@ -76,6 +81,18 @@ builder.Services.AddRateLimiter(options =>
             new { message = "Demasiados intentos. Espera un minuto e inténtalo de nuevo." },
             cancellationToken);
     };
+
+    static RateLimitPartition<string> FiveAttemptsPerMinutePerIp(HttpContext httpContext) =>
+        // Cada IP tiene su propio contador (partición).
+        // Detrás de un proxy/load balancer habría que usar ForwardedHeaders para ver la IP real.
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "desconocida",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 5,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0, // no encolamos: rechazamos de inmediato
+            });
 });
 
 var app = builder.Build();
@@ -113,5 +130,6 @@ app.MapGet("/api/health", () => Results.Ok(new { status = "ok", time = DateTime.
 
 app.MapAuthEndpoints();
 app.MapProfileEndpoints();
+app.MapTwoFactorEndpoints();
 
 app.Run();

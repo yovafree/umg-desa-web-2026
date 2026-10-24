@@ -26,4 +26,8 @@ public class JwtOptions
     // Vida corta del access token: si se filtra, sirve poco tiempo.
     [Range(1, 1440)]
     public int AccessTokenMinutes { get; set; } = 15;
+
+    // Vida del tempToken entre "contraseña correcta" y "código 2FA correcto".
+    [Range(1, 60)]
+    public int TwoFactorTokenMinutes { get; set; } = 5;
 }
