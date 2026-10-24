@@ -1,4 +1,6 @@
 import { useAuth0 } from '@auth0/auth0-react'
+import AccessTokenPanel from './components/AccessTokenPanel'
+import ApiPanel from './components/ApiPanel'
 import NavBar from './components/NavBar'
 import ProfileCard from './components/ProfileCard'
 import { config } from './config'
@@ -17,7 +19,11 @@ export default function App() {
           // Mientras el SDK procesa el ?code=... del callback o revisa la sesión.
           <section className="card">Cargando sesión…</section>
         ) : isAuthenticated ? (
-          <ProfileCard />
+          <>
+            <ProfileCard />
+            <ApiPanel />
+            <AccessTokenPanel />
+          </>
         ) : (
           <section className="card">
             <h1>Bienvenido</h1>
