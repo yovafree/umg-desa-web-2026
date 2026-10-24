@@ -15,6 +15,7 @@ export default function Layout() {
           {isAuthenticated ? (
             <>
               <NavLink to="/perfil">Perfil</NavLink>
+              <NavLink to="/seguridad">Seguridad</NavLink>
               <button onClick={logout}>Cerrar sesión</button>
             </>
           ) : (
