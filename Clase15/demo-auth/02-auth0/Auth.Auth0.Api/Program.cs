@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 
@@ -61,7 +62,14 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-builder.Services.AddAuthorization();
+// Política basada en PERMISOS (RBAC de Auth0).
+// Con "Enable RBAC" + "Add Permissions in the Access Token" activos en la API de Auth0,
+// el access token trae:  "permissions": ["read:messages"].
+// Un usuario autenticado SIN ese permiso recibe 403 (autenticado, pero no autorizado).
+builder.Services.AddAuthorizationBuilder()
+    .AddPolicy("read:messages", policy => policy
+        .RequireAuthenticatedUser()
+        .RequireClaim("permissions", "read:messages"));
 
 var app = builder.Build();
 
@@ -82,4 +90,32 @@ app.UseAuthorization();
 // ---------------------------------------------------------------
 app.MapGet("/api/health", () => Results.Ok(new { status = "ok", time = DateTime.UtcNow }));
 
+// Anónimo: cualquiera puede llamarlo -> 200
+app.MapGet("/api/public", () => Results.Ok(new
+{
+    message = "Endpoint público: no necesitas token para ver esto.",
+}));
+
+// Requiere un access token válido de Auth0 -> 200 / 401
+app.MapGet("/api/private", (ClaimsPrincipal user) => Results.Ok(new
+{
+    message = "Endpoint privado: tu token de Auth0 es válido.",
+    sub = user.FindFirstValue("sub"),
+    permissions = GetPermissions(user),
+}))
+.RequireAuthorization();
+
+// Requiere token válido Y el permiso read:messages -> 200 / 401 / 403
+app.MapGet("/api/private-scoped", (ClaimsPrincipal user) => Results.Ok(new
+{
+    message = "Endpoint con permiso: tienes 'read:messages'.",
+    sub = user.FindFirstValue("sub"),
+    permissions = GetPermissions(user),
+}))
+.RequireAuthorization("read:messages");
+
 app.Run();
+
+// El arreglo "permissions" del JWT llega como varios claims con el mismo nombre.
+static string[] GetPermissions(ClaimsPrincipal user) =>
+    user.FindAll("permissions").Select(c => c.Value).ToArray();
