@@ -2,6 +2,7 @@ using Auth.Local.Api.Auth;
 using Auth.Local.Api.Data;
 using Auth.Local.Api.Endpoints;
 using Auth.Local.Api.Models;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -28,6 +29,14 @@ builder.Services.AddOptions<JwtOptions>()
 
 builder.Services.AddSingleton<TokenService>();
 
+// Autenticación con JWT Bearer: lee "Authorization: Bearer <token>" y valida
+// issuer, audience, expiración y firma. La configuración está en JwtBearerSetup.
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer();
+builder.Services.ConfigureOptions<JwtBearerSetup>();
+
+builder.Services.AddAuthorization();
+
 var app = builder.Build();
 
 // Para la demo usamos EnsureCreated: crea auth.db con el esquema si no existe.
@@ -46,11 +55,17 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
+// El orden importa: primero averiguamos QUIÉN es (autenticación)
+// y después decidimos QUÉ puede hacer (autorización).
+app.UseAuthentication();
+app.UseAuthorization();
+
 // ---------------------------------------------------------------
 // Endpoints
 // ---------------------------------------------------------------
 app.MapGet("/api/health", () => Results.Ok(new { status = "ok", time = DateTime.UtcNow }));
 
 app.MapAuthEndpoints();
+app.MapProfileEndpoints();
 
 app.Run();

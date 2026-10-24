@@ -50,3 +50,21 @@ Content-Type: application/json
   "email": "nadie@demo.com",
   "password": "Secreta123"
 }
+
+### Perfil CON token -> 200 (usa el token de la petición "login" de arriba)
+GET {{api}}/api/profile
+Authorization: Bearer {{login.response.body.accessToken}}
+
+### ERROR INTENCIONAL: perfil SIN token -> 401
+GET {{api}}/api/profile
+
+### ERROR INTENCIONAL: token modificado a mano -> 401 (invalid_token: firma inválida)
+# Copia el token del login, cambia una letra del payload (la parte del medio) y pégalo aquí.
+GET {{api}}/api/profile
+Authorization: Bearer PEGA_AQUI_EL_TOKEN_MODIFICADO
+
+### ERROR INTENCIONAL: token expirado -> 401 (cabecera WWW-Authenticate: "The token expired...")
+# Arranca la API con tokens de 1 minuto:  dotnet run -- --Jwt:AccessTokenMinutes=1
+# Haz login, espera ~1,5 min (1 min + 30 s de ClockSkew) y ejecuta esta petición.
+GET {{api}}/api/profile
+Authorization: Bearer {{login.response.body.accessToken}}
