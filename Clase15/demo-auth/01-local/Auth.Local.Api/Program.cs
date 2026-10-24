@@ -1,3 +1,4 @@
+using Auth.Local.Api.Auth;
 using Auth.Local.Api.Data;
 using Auth.Local.Api.Endpoints;
 using Auth.Local.Api.Models;
@@ -17,6 +18,15 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 // PasswordHasher<User> viene de ASP.NET Core Identity (incluido en el framework).
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
+
+// Opciones JWT tipadas. ValidateOnStart hace que la API NO arranque si falta
+// la llave (Jwt:Key) en user-secrets: mejor fallar temprano que emitir tokens inseguros.
+builder.Services.AddOptions<JwtOptions>()
+    .Bind(builder.Configuration.GetSection(JwtOptions.SectionName))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+
+builder.Services.AddSingleton<TokenService>();
 
 var app = builder.Build();
 
