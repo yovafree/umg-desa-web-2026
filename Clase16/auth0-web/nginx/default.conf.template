@@ -1,0 +1,37 @@
+# Plantilla procesada con envsubst al iniciar el contenedor (${PORT} lo define Render).
+# Las variables propias de Nginx ($uri, $status...) no se tocan porque no existen en el entorno.
+
+# Un log por petición en JSON (Render lo muestra en la pestaña "Logs").
+log_format json_combined escape=json
+  '{"time":"$time_iso8601","method":"$request_method","path":"$uri",'
+  '"status":$status,"bytes":$body_bytes_sent,"durationMs":"$request_time",'
+  '"userAgent":"$http_user_agent"}';
+
+server {
+    listen ${PORT};
+    server_name _;
+    root /usr/share/nginx/html;
+    index index.html;
+
+    access_log /dev/stdout json_combined;
+
+    # Health check del frontend: Nginx está arriba y sirve archivos.
+    # Devuelve también la versión (commit SHA) con la que se construyó la imagen.
+    location = /health {
+        default_type application/json;
+        add_header Cache-Control "no-store";
+        try_files /health.json =404;
+    }
+
+    # Archivos con hash en el nombre (Vite): se pueden cachear "para siempre".
+    location /assets/ {
+        add_header Cache-Control "public, max-age=31536000, immutable";
+        try_files $uri =404;
+    }
+
+    # SPA: cualquier otra ruta devuelve index.html (sin caché, para tomar siempre la versión nueva).
+    location / {
+        add_header Cache-Control "no-cache";
+        try_files $uri $uri/ /index.html;
+    }
+}

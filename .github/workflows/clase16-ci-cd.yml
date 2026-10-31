@@ -1,0 +1,286 @@
+# ---------------------------------------------------------------
+# Clase 16 · CI/CD de demo-auth (Parte B · Auth0) hacia Render
+#
+#   Pull request a main  -> CI: compila, prueba y valida (no despliega)
+#   Push a main          -> CI + publica imágenes en GHCR + despliega en Render
+#                           + espera los health checks + smoke tests
+#
+# Configuración (Settings > Secrets and variables > Actions): ver Clase16/README.md
+# ---------------------------------------------------------------
+name: Clase16 · CI/CD Render
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "Clase16/**"
+      - ".github/workflows/clase16-ci-cd.yml"
+  push:
+    branches: [main]
+    paths:
+      - "Clase16/**"
+      - ".github/workflows/clase16-ci-cd.yml"
+  workflow_dispatch: # botón "Run workflow" para desplegar manualmente
+
+# Un solo pipeline a la vez por rama. En PR se cancela el anterior;
+# en main NO, para no interrumpir un despliegue a medias.
+concurrency:
+  group: clase16-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+# Mínimo privilegio: cada job pide solo lo que necesita.
+permissions:
+  contents: read
+
+jobs:
+  # =============================================================
+  # CI · Integración continua
+  # =============================================================
+  api-ci:
+    name: API · build y tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Clase16
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Restore
+        run: dotnet restore Clase16.sln
+
+      - name: Build
+        run: dotnet build Clase16.sln -c Release --no-restore
+
+      - name: Tests
+        run: >
+          dotnet test Clase16.sln -c Release --no-build
+          --logger "trx;LogFileName=resultados.trx"
+          --results-directory TestResults
+
+      - name: Subir resultados de tests
+        if: always() # también cuando fallan: es justo cuando más interesan
+        uses: actions/upload-artifact@v4
+        with:
+          name: resultados-tests-api
+          path: Clase16/TestResults
+
+  web-ci:
+    name: Web · lint y build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Clase16/auth0-web
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: Clase16/auth0-web/package-lock.json
+
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build # tsc -b (tipos) + vite build
+
+  # =============================================================
+  # Publicar imágenes (solo en main)
+  # =============================================================
+  publish:
+    name: Docker · publicar en GHCR
+    needs: [api-ci, web-ci]
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write # para hacer push a ghcr.io con el GITHUB_TOKEN
+    outputs:
+      api-image: ${{ steps.names.outputs.api }}
+      web-image: ${{ steps.names.outputs.web }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Validar variables de Render/Auth0
+        env:
+          RENDER_API_URL: ${{ vars.RENDER_API_URL }}
+          AUTH0_DOMAIN: ${{ vars.AUTH0_DOMAIN }}
+          AUTH0_CLIENT_ID: ${{ vars.AUTH0_CLIENT_ID }}
+          AUTH0_AUDIENCE: ${{ vars.AUTH0_AUDIENCE }}
+        run: |
+          for v in AUTH0_DOMAIN AUTH0_CLIENT_ID AUTH0_AUDIENCE; do
+            if [ -z "${!v}" ]; then
+              echo "::error::Falta la variable de repositorio $v (ver Clase16/README.md)"; exit 1
+            fi
+          done
+          # Primera ejecución: aún no existe el servicio en Render, así que no sabemos su URL.
+          # Se publican las imágenes igual (para poder crear los servicios) y el deploy se omite.
+          if [ -z "$RENDER_API_URL" ]; then
+            echo "::warning::RENDER_API_URL vacía: la web se compila apuntando a localhost y se omite el deploy."
+          fi
+
+      # GHCR exige el nombre en minúsculas. Etiquetamos con el SHA del commit:
+      # cada imagen es inmutable y sabemos exactamente qué código contiene.
+      - name: Nombres de imagen
+        id: names
+        run: |
+          owner="${GITHUB_REPOSITORY_OWNER,,}"
+          echo "api=ghcr.io/${owner}/clase16-auth0-api:${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+          echo "web=ghcr.io/${owner}/clase16-auth0-web:${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+          echo "api_latest=ghcr.io/${owner}/clase16-auth0-api:latest" >> "$GITHUB_OUTPUT"
+          echo "web_latest=ghcr.io/${owner}/clase16-auth0-web:latest" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & push API
+        uses: docker/build-push-action@v6
+        with:
+          context: Clase16/Auth.Auth0.Api
+          push: true
+          tags: |
+            ${{ steps.names.outputs.api }}
+            ${{ steps.names.outputs.api_latest }}
+          build-args: |
+            APP_VERSION=${{ github.sha }}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+          cache-from: type=gha,scope=clase16-api
+          cache-to: type=gha,scope=clase16-api,mode=max
+
+      - name: Build & push Web
+        uses: docker/build-push-action@v6
+        with:
+          context: Clase16/auth0-web
+          push: true
+          tags: |
+            ${{ steps.names.outputs.web }}
+            ${{ steps.names.outputs.web_latest }}
+          build-args: |
+            APP_VERSION=${{ github.sha }}
+            VITE_AUTH0_DOMAIN=${{ vars.AUTH0_DOMAIN }}
+            VITE_AUTH0_CLIENT_ID=${{ vars.AUTH0_CLIENT_ID }}
+            VITE_AUTH0_AUDIENCE=${{ vars.AUTH0_AUDIENCE }}
+            VITE_API_URL=${{ vars.RENDER_API_URL }}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+          cache-from: type=gha,scope=clase16-web
+          cache-to: type=gha,scope=clase16-web,mode=max
+
+  # =============================================================
+  # CD · Despliegue continuo en Render
+  # =============================================================
+  deploy-api:
+    name: Render · desplegar API
+    needs: publish
+    if: vars.RENDER_API_URL != '' # se omite hasta que exista el servicio en Render
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: ${{ vars.RENDER_API_URL }}/health/ready
+    steps:
+      - name: Disparar deploy hook con la imagen nueva
+        env:
+          HOOK: ${{ secrets.RENDER_DEPLOY_HOOK_API }}
+          IMAGE: ${{ needs.publish.outputs.api-image }}
+        run: |
+          if [ -z "$HOOK" ]; then echo "::error::Falta el secret RENDER_DEPLOY_HOOK_API"; exit 1; fi
+          # imgURL le dice a Render QUÉ imagen desplegar (la etiquetada con este commit).
+          curl -fsS -X POST "${HOOK}&imgURL=$(jq -rn --arg v "$IMAGE" '$v|@uri')"
+          echo
+
+      - name: Esperar health check (/health/ready con la versión nueva)
+        env:
+          URL: ${{ vars.RENDER_API_URL }}/health/ready
+        run: |
+          # Render solo cambia el tráfico a la versión nueva cuando su health check pasa.
+          # Aquí esperamos (máx. 10 min) a que /health/ready reporte ESTE commit.
+          for i in $(seq 1 40); do
+            body=$(curl -s --max-time 60 "$URL" || true)
+            version=$(echo "$body" | jq -r '.version // empty' 2>/dev/null || true)
+            status=$(echo "$body" | jq -r '.status // empty' 2>/dev/null || true)
+            echo "Intento $i: status=${status:-?} version=${version:-?}"
+            if [ "$version" = "$GITHUB_SHA" ] && [ "$status" = "Healthy" ]; then
+              echo "$body"; exit 0
+            fi
+            sleep 15
+          done
+          echo "::error::La API no reportó la versión $GITHUB_SHA como Healthy. Revisa Render > Events y Logs."
+          exit 1
+
+  deploy-web:
+    name: Render · desplegar Web
+    needs: [publish, deploy-api] # la web nueva puede depender de la API nueva
+    if: vars.RENDER_WEB_URL != ''
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: ${{ vars.RENDER_WEB_URL }}
+    steps:
+      - name: Disparar deploy hook con la imagen nueva
+        env:
+          HOOK: ${{ secrets.RENDER_DEPLOY_HOOK_WEB }}
+          IMAGE: ${{ needs.publish.outputs.web-image }}
+        run: |
+          if [ -z "$HOOK" ]; then echo "::error::Falta el secret RENDER_DEPLOY_HOOK_WEB"; exit 1; fi
+          curl -fsS -X POST "${HOOK}&imgURL=$(jq -rn --arg v "$IMAGE" '$v|@uri')"
+          echo
+
+      - name: Esperar health check (/health con la versión nueva)
+        env:
+          URL: ${{ vars.RENDER_WEB_URL }}/health
+        run: |
+          for i in $(seq 1 40); do
+            version=$(curl -s --max-time 60 "$URL" | jq -r '.version // empty' 2>/dev/null || true)
+            echo "Intento $i: version=${version:-?}"
+            if [ "$version" = "$GITHUB_SHA" ]; then exit 0; fi
+            sleep 15
+          done
+          echo "::error::La web no reportó la versión $GITHUB_SHA. Revisa Render > Events y Logs."
+          exit 1
+
+  smoke-tests:
+    name: Smoke tests en producción
+    needs: [deploy-api, deploy-web]
+    runs-on: ubuntu-latest
+    env:
+      API: ${{ vars.RENDER_API_URL }}
+      WEB: ${{ vars.RENDER_WEB_URL }}
+    steps:
+      - name: Probar endpoints públicos, privados y CORS
+        run: |
+          check() { # check <descripción> <status esperado> <curl args...>
+            local desc="$1" expected="$2"; shift 2
+            local got; got=$(curl -s -o /dev/null -w '%{http_code}' --max-time 60 "$@")
+            if [ "$got" = "$expected" ]; then echo "OK   $desc -> $got"; else echo "FAIL $desc -> $got (esperado $expected)"; FAILED=1; fi
+          }
+          FAILED=0
+          check "GET web /"                 200 "$WEB/"
+          check "GET /api/public"           200 "$API/api/public"
+          check "GET /api/private sin token" 401 "$API/api/private"
+          check "GET /health/live"          200 "$API/health/live"
+
+          origin=$(curl -s -o /dev/null -D - -X OPTIONS "$API/api/public" \
+            -H "Origin: $WEB" -H "Access-Control-Request-Method: GET" \
+            | tr -d '\r' | awk -F': ' 'tolower($1)=="access-control-allow-origin"{print $2}')
+          if [ "$origin" = "$WEB" ]; then echo "OK   CORS permite $WEB"; else echo "FAIL CORS devolvió '${origin}'"; FAILED=1; fi
+
+          {
+            echo "## Despliegue Clase16 :rocket:"
+            echo "| Servicio | URL | Versión |"
+            echo "|---|---|---|"
+            echo "| API | $API | \`${GITHUB_SHA::7}\` |"
+            echo "| Web | $WEB | \`${GITHUB_SHA::7}\` |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          exit $FAILED

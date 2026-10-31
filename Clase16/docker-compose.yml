@@ -1,0 +1,34 @@
+# ---------------------------------------------------------------
+# Prueba local de los MISMOS contenedores que se despliegan en Render.
+#   cp .env.example .env    (y completa los valores de tu tenant de Auth0)
+#   docker compose up --build
+#   docker compose ps       -> columna STATUS muestra (healthy) / (unhealthy)
+#   docker compose logs -f api
+# ---------------------------------------------------------------
+services:
+  api:
+    build:
+      context: ./Auth.Auth0.Api
+      args:
+        APP_VERSION: local-compose
+    environment:
+      Auth0__Domain: ${AUTH0_DOMAIN}
+      Auth0__Audience: ${AUTH0_AUDIENCE}
+      Cors__AllowedOrigins__0: http://localhost:5173
+    ports:
+      - "5080:8080"
+
+  web:
+    build:
+      context: ./auth0-web
+      args:
+        APP_VERSION: local-compose
+        VITE_AUTH0_DOMAIN: ${AUTH0_DOMAIN}
+        VITE_AUTH0_CLIENT_ID: ${AUTH0_CLIENT_ID}
+        VITE_AUTH0_AUDIENCE: ${AUTH0_AUDIENCE}
+        VITE_API_URL: http://localhost:5080
+    ports:
+      - "5173:8080"   # mismo origen que ya está registrado en Auth0 y en CORS
+    depends_on:
+      api:
+        condition: service_healthy   # espera a que el HEALTHCHECK de la API pase
