@@ -6,6 +6,10 @@ export const config = {
   apiUrl: import.meta.env.VITE_API_URL ?? 'http://localhost:5080',
   // openid/profile/email -> datos del ID Token; read:messages -> permiso para nuestra API.
   scope: 'openid profile email read:messages',
+  // Versión desplegada: commit SHA que inyecta el Dockerfile al compilar (ver VersionFooter).
+  version: import.meta.env.VITE_APP_VERSION || 'local',
+  buildTime: import.meta.env.VITE_BUILD_TIME ?? '',
+  repoUrl: import.meta.env.VITE_REPO_URL ?? '',
 }
 
 export const isConfigured =

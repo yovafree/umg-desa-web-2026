@@ -3,6 +3,7 @@ import AccessTokenPanel from './components/AccessTokenPanel'
 import ApiPanel from './components/ApiPanel'
 import NavBar from './components/NavBar'
 import ProfileCard from './components/ProfileCard'
+import VersionFooter from './components/VersionFooter'
 import { config } from './config'
 
 export default function App() {
@@ -33,6 +34,7 @@ export default function App() {
           </section>
         )}
       </main>
+      <VersionFooter />
     </>
   )
 }

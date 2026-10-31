@@ -167,6 +167,7 @@ jobs:
             ${{ steps.names.outputs.web_latest }}
           build-args: |
             APP_VERSION=${{ github.sha }}
+            REPO_URL=${{ github.server_url }}/${{ github.repository }}
             VITE_AUTH0_DOMAIN=${{ vars.AUTH0_DOMAIN }}
             VITE_AUTH0_CLIENT_ID=${{ vars.AUTH0_CLIENT_ID }}
             VITE_AUTH0_AUDIENCE=${{ vars.AUTH0_AUDIENCE }}

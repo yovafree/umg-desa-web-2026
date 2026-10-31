@@ -28,7 +28,7 @@ Clase16/
 │   ├── Dockerfile             # multi-stage: sdk -> aspnet (alpine), usuario no-root, HEALTHCHECK
 │   └── requests.http          # incluye /health/live, /health/ready y /api/demo/error
 ├── Auth.Auth0.Api.Tests/      # tests de integración (WebApplicationFactory) que corre el CI
-├── auth0-web/                 # React + Vite + TS (sin cambios en el código)
+├── auth0-web/                 # React + Vite + TS (igual que la Clase 15 + footer con la versión)
 │   ├── Dockerfile             # multi-stage: node (build) -> nginx (runtime)
 │   └── nginx/default.conf.template   # puerto ${PORT}, /health, SPA fallback, access log JSON
 ├── Clase16.sln
@@ -50,6 +50,7 @@ Clase16/
 | Logs JSON + un log por petición | `Program.cs`, `appsettings.json` | Logs fáciles de filtrar en Render |
 | `/api/demo/error` | `Program.cs` | Provocar un 500 y ver el stack trace en los logs |
 | `APP_VERSION` | `Dockerfile`, `HealthResponseWriter.cs` | Saber qué commit está corriendo en producción |
+| Footer con la versión | `auth0-web/src/components/VersionFooter.tsx` | Muestra el commit de la web y el de la API (leído de `/health/live`), con enlace al commit en GitHub |
 | Tests de integración | `Auth.Auth0.Api.Tests/` | Sin tests, el CI solo comprueba que compila |
 
 ## Requisitos
@@ -243,6 +244,16 @@ El job de deploy usa el *environment* `production` (GitHub lo crea automáticame
 
 Abre la web, inicia sesión con Auth0 y usa **Probar API**: el flujo es el mismo de la Clase 15, ahora en HTTPS y en la nube.
 
+El **footer** de la web muestra la versión desplegada:
+
+```text
+Web 4244e5e · compilada 7/11/2026, 09:02:11        API 4244e5e
+```
+
+- **Web**: el SHA con el que se compiló la imagen (build-arg `APP_VERSION` → `VITE_APP_VERSION`) y la fecha del build. Enlaza al commit en GitHub (`REPO_URL`).
+- **API**: el SHA que reporta `/health/live`. Si no coincide con el de la web aparece *(distinta a la web)*, por ejemplo mientras `deploy-web` todavía no termina. Si la API no responde, muestra *no disponible*.
+- En local (`npm run dev`) se ve `local`; con Docker Compose, `local-compose`.
+
 ---
 
 ## Health checks
@@ -308,7 +319,7 @@ Búsquedas útiles en Render → Logs:
 ## Demos sugeridas para la clase
 
 1. **CI que bloquea un error**: en una rama, cambia un `Assert` en [ApiTests.cs](Auth.Auth0.Api.Tests/ApiTests.cs) (o rompe un tipo en el frontend) y abre un PR. El check queda en rojo, se puede descargar el artefacto `resultados-tests-api` y **no se despliega nada**. Opcional: **Settings → Branches → Branch protection** para exigir que el CI pase antes de hacer merge.
-2. **Despliegue continuo**: cambia un texto visible en [App.tsx](auth0-web/src/App.tsx) o en `/api/public`, haz merge y observa el pipeline completo, el job esperando el health check y la nueva versión en `/health/ready`.
+2. **Despliegue continuo**: cambia un texto visible en [App.tsx](auth0-web/src/App.tsx) o en `/api/public`, haz merge y observa el pipeline completo, el job esperando el health check y la nueva versión en `/health/ready` y en el footer de la web (recarga durante el deploy para ver la API con el commit nuevo antes que la web).
 3. **Health check que salva producción**: en Render → API → Environment, cambia `Auth0__Domain` a un dominio que no exista y guarda (Render redespliega). `/health/ready` de la nueva instancia devuelve `503`, el deploy falla en **Events** y la versión anterior **sigue funcionando**. Restaura el valor correcto.
 4. **Leer logs de un error**: llama a `GET /api/demo/error` y busca el stack trace en Render → Logs. Nota que el cliente solo recibe un `ProblemDetails` genérico (no se filtran detalles internos).
 5. **Rollback**: en Render → API → Events, usa **Rollback** sobre un deploy anterior; o en GitHub → Actions, **Re-run all jobs** de un run viejo (vuelve a desplegar la imagen con ese SHA, que sigue en GHCR).
